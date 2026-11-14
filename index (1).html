@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>برنامج الحسابات المتكامل</title>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--tx:#1b2433;--mu:#6b7686;--bd:#d9dfe9;--pr:#1f3864;--pt:#fff;--ok:#1b7f4b;--bad:#c0392b;--hl:#eef3fb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10151e;--card:#1a2230;--tx:#e8edf5;--mu:#97a3b6;--bd:#2c384c;--pr:#5b8def;--pt:#0b1220;--ok:#46c27f;--bad:#ff7a6b;--hl:#222d40;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10151e;--card:#1a2230;--tx:#e8edf5;--mu:#97a3b6;--bd:#2c384c;--pr:#5b8def;--pt:#0b1220;--ok:#46c27f;--bad:#ff7a6b;--hl:#222d40;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font-family:Tahoma,Arial,sans-serif;font-size:15px;padding:0 0 40px}
+header{background:var(--pr);color:var(--pt);padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+header h1{font-size:18px;margin:0}
+nav{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;background:var(--card);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:5}
+nav button{white-space:nowrap;border:1px solid var(--bd);background:var(--bg);color:var(--tx);padding:8px 14px;border-radius:20px;cursor:pointer;font:inherit}
+nav button.on{background:var(--pr);color:var(--pt);border-color:var(--pr)}
+main{max-width:1100px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.kpi{background:var(--hl);border-radius:10px;padding:12px}.kpi small{color:var(--mu)}.kpi b{display:block;font-size:20px;margin-top:4px}
+form{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+label{display:flex;flex-direction:column;font-size:12px;color:var(--mu);gap:3px;flex:1 1 130px}
+input,select,textarea{font:inherit;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);min-width:0;width:100%}
+button.b{background:var(--pr);color:var(--pt);border:0;padding:9px 16px;border-radius:8px;cursor:pointer;font:inherit}
+button.x{background:none;border:0;color:var(--bad);cursor:pointer;font-size:16px}
+button.g{background:var(--card);color:var(--pt);border:1px solid var(--pt);padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:640px}
+th{background:var(--pr);color:var(--pt);padding:8px;font-size:13px;text-align:center}
+td{padding:7px 8px;border-bottom:1px solid var(--bd);text-align:center;font-size:14px}
+tr.t td{background:var(--hl);font-weight:bold}
+.n{direction:ltr;unicode-bidi:plaintext}.neg{color:var(--bad)}.pos{color:var(--ok)}.mu{color:var(--mu);font-size:13px}
+.ro form,.ro .x,.ro .ed{display:none}.bar{height:10px;background:var(--hl);border-radius:6px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:var(--ok)}textarea{min-width:220px}.warn{border:2px solid var(--bad)}.warn h2{color:var(--bad)}.warn div{padding:3px 0}.ed{background:none;border:0;cursor:pointer;font-size:15px;color:var(--pr)}button.g2{background:var(--bg);color:var(--tx);border:1px solid var(--bd);padding:9px 14px;border-radius:8px;cursor:pointer;font:inherit}
+td input{text-align:center;max-width:170px}
+header span{font-size:12px;opacity:.85}
+</style>
+</head>
+<body>
+<header><h1 id="ttl">📒 برنامج الحسابات المتكامل</h1><div><span id="st"></span> <button class="g" id="b1" onclick="xp(TS[ui.tab]||Object.keys(sheets()))">تصدير Excel</button> <button class="g" id="b2" onclick="xp(Object.keys(sheets()))">تصدير الكل</button> <button class="g" id="b3" onclick="backup()">نسخة احتياطية</button> <button class="g" id="b4" onclick="document.getElementById('imp').click()">استعادة</button><input type="file" id="imp" accept=".json" hidden onchange="restore(this)"></div></header>
+<nav id="nav"></nav>
+<main id="m"></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const TABS=[["home","الرئيسية"],["dash","لوحة التحكم"],["inv","الفواتير والمرتجعات"],["stm","كشف حساب العملاء"],["cus","العملاء"],["pur","المشتريات"],["sst","كشف حساب الموردين"],["sup","الموردون"],["itm","الأصناف"],["stk","المخزون"],["tre","الخزينة"],["bud","الميزانية"],["usr","المستخدمون"],["set","الإعدادات"]];
+const TS={inv:["الفواتير"],stm:["كشف حساب العملاء"],cus:["العملاء"],pur:["المشتريات"],sst:["كشف حساب الموردين"],sup:["الموردون"],itm:["الأصناف"],stk:["المخزون"],usr:["المستخدمون"],tre:["الخزينة"],bud:["الميزانية"]};
+const P={c:{L:"inv",Y:"pay",list:"cus",P:"فاتورة",M:"مرتجع",cat:"تحصيل من عميل",io:"in",lb:"العميل",tr:"سداد من "},s:{L:"pur",Y:"spay",list:"sup",P:"شراء",M:"مرتجع شراء",cat:"سداد لمورد",io:"out",lb:"المورد",tr:"سداد إلى "}};
+const def=()=>({users:{},done:{},cus:[],sup:[],inv:[],pur:[],tre:[],pay:[],spay:[],items:[],open:0,warnDays:30,bud:{}});
+const today=new Date().toISOString().slice(0,10);
+const ui={tab:"home",me:"local",admin:true,names:{},fc:"",sc:"",e:null,last:{},who:"محلي (هذا الجهاز فقط)"};
+let S=def(),canW=true,dbDoc=null,tmr;
+try{const l=localStorage.getItem("acc_v1");if(l)S=Object.assign(def(),JSON.parse(l))}catch(e){}
+if(!S.users.local)S.users.local={job:"مدير",tasks:""};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const DT=`برنامج الحسابات المتكامل|Integrated Accounting System|Système comptable intégré|Sistema contabile integrato|Sistema contable integrado|Единая система учёта
+تصدير Excel|Export Excel|Exporter Excel|Esporta Excel|Exportar Excel|Экспорт в Excel
+تصدير الكل|Export all|Tout exporter|Esporta tutto|Exportar todo|Экспорт всего
+نسخة احتياطية|Backup|Sauvegarde|Backup|Copia de seguridad|Резервная копия
+استعادة|Restore|Restaurer|Ripristina|Restaurar|Восстановить
+الرئيسية|Home|Accueil|Home|Inicio|Главная
+لوحة التحكم|Dashboard|Tableau de bord|Dashboard|Panel de control|Панель
+الفواتير والمرتجعات|Invoices & returns|Factures et retours|Fatture e resi|Facturas y devoluciones|Счета и возвраты
+كشف حساب العملاء|Customer statements|Relevés clients|Estratti conto clienti|Estados de cuenta de clientes|Выписки клиентов
+العملاء|Customers|Clients|Clienti|Clientes|Клиенты
+المشتريات|Purchases|Achats|Acquisti|Compras|Закупки
+كشف حساب الموردين|Supplier statements|Relevés fournisseurs|Estratti conto fornitori|Estados de cuenta de proveedores|Выписки поставщиков
+الموردون|Suppliers|Fournisseurs|Fornitori|Proveedores|Поставщики
+الأصناف|Items|Articles|Articoli|Artículos|Товары
+المخزون|Inventory|Stock|Magazzino|Inventario|Склад
+الخزينة|Cash box|Caisse|Cassa|Caja|Касса
+الميزانية|Balance sheet|Bilan|Bilancio|Balance|Баланс
+المستخدمون|Users|Utilisateurs|Utenti|Usuarios|Пользователи
+الإعدادات|Settings|Paramètres|Impostazioni|Ajustes|Настройки
+الفواتير|Invoices|Factures|Fatture|Facturas|Счета
+فاتورة|Invoice|Facture|Fattura|Factura|Счёт
+مرتجع|Return|Retour|Reso|Devolución|Возврат
+شراء|Purchase|Achat|Acquisto|Compra|Закупка
+مرتجع شراء|Purchase return|Retour d'achat|Reso d'acquisto|Devolución de compra|Возврат закупки
+تحصيل من عميل|Customer collection|Encaissement client|Incasso da cliente|Cobro de cliente|Поступление от клиента
+سداد لمورد|Supplier payment|Paiement fournisseur|Pagamento fornitore|Pago a proveedor|Оплата поставщику
+العميل|Customer|Client|Cliente|Cliente|Клиент
+المورد|Supplier|Fournisseur|Fornitore|Proveedor|Поставщик
+محلي (هذا الجهاز فقط)|Local (this device only)|Local (cet appareil)|Locale (solo questo dispositivo)|Local (solo este dispositivo)|Локально (только это устройство)
+مدير|Manager|Directeur|Direttore|Gerente|Руководитель
+محفوظ في المتصفح|Saved in browser|Enregistré dans le navigateur|Salvato nel browser|Guardado en el navegador|Сохранено в браузере
+تم الحفظ ✓|Saved ✓|Enregistré ✓|Salvato ✓|Guardado ✓|Сохранено ✓
+الحفظ السحابي تعذر، محفوظ في المتصفح|Cloud save failed, saved in browser|Échec de la sauvegarde cloud, enregistré localement|Salvataggio cloud non riuscito, salvato nel browser|Falló el guardado en la nube, guardado en el navegador|Ошибка облачного сохранения, сохранено в браузере
+مالك (صلاحية كاملة)|Owner (full access)|Propriétaire (accès complet)|Proprietario (accesso completo)|Propietario (acceso total)|Владелец (полный доступ)
+مستخدم (يسجّل بيانات)|User (can enter data)|Utilisateur (saisie de données)|Utente (può inserire dati)|Usuario (puede registrar datos)|Пользователь (ввод данных)
+مشاهدة فقط|View only|Lecture seule|Sola lettura|Solo lectura|Только просмотр
+متصل ✓|Connected ✓|Connecté ✓|Connesso ✓|Conectado ✓|Подключено ✓
+تعذر تنزيل الملف هنا|Could not download the file here|Impossible de télécharger le fichier ici|Impossibile scaricare il file qui|No se pudo descargar el archivo aquí|Не удалось скачать файл
+تمت الاستعادة|Restored|Restauré|Ripristinato|Restaurado|Восстановлено
+ملف غير صالح|Invalid file|Fichier invalide|File non valido|Archivo no válido|Неверный файл
+مكتبة Excel لم تُحمّل، جرّب لاحقًا|Excel library not loaded, try later|Bibliothèque Excel non chargée, réessayez|Libreria Excel non caricata, riprova|Biblioteca de Excel no cargada, intente luego|Библиотека Excel не загружена
+رصيد افتتاحي|Opening balance|Solde d'ouverture|Saldo iniziale|Saldo inicial|Начальное сальдо
+سداد|Payment|Paiement|Pagamento|Pago|Платёж
+الأصول المتداولة|Current assets|Actifs courants|Attività correnti|Activos corrientes|Оборотные активы
+النقدية بالخزينة|Cash on hand|Trésorerie en caisse|Cassa contanti|Efectivo en caja|Наличные в кассе
+أرصدة العملاء (المدينون)|Customer balances (receivables)|Soldes clients (créances)|Saldi clienti (crediti)|Saldos de clientes (por cobrar)|Задолженность клиентов
+البنوك / حسابات جارية|Banks / current accounts|Banques / comptes courants|Banche / conti correnti|Bancos / cuentas corrientes|Банки / текущие счета
+مصروفات مقدمة|Prepaid expenses|Charges constatées d'avance|Spese anticipate|Gastos prepagados|Расходы будущих периодов
+أوراق قبض|Notes receivable|Effets à recevoir|Effetti attivi|Efectos por cobrar|Векселя к получению
+أرصدة مدينة أخرى|Other receivables|Autres créances|Altri crediti|Otros deudores|Прочая дебиторка
+الأصول الثابتة|Fixed assets|Immobilisations|Immobilizzazioni|Activos fijos|Основные средства
+الأراضي|Land|Terrains|Terreni|Terrenos|Земля
+المباني|Buildings|Bâtiments|Fabbricati|Edificios|Здания
+الآلات والمعدات|Machinery & equipment|Machines et équipements|Macchinari e attrezzature|Maquinaria y equipo|Машины и оборудование
+السيارات|Vehicles|Véhicules|Veicoli|Vehículos|Транспорт
+الأثاث والتجهيزات|Furniture & fittings|Mobilier et agencements|Arredi e attrezzature|Mobiliario y enseres|Мебель и оснащение
+أجهزة حاسب وبرامج|Computers & software|Ordinateurs et logiciels|Computer e software|Equipos y software|Компьютеры и ПО
+مجمع الإهلاك (بالسالب)|Accumulated depreciation (negative)|Amortissements cumulés (négatif)|Fondo ammortamento (negativo)|Depreciación acumulada (negativo)|Накопленная амортизация (минус)
+الالتزامات المتداولة|Current liabilities|Passifs courants|Passività correnti|Pasivos corrientes|Краткосрочные обязательства
+الموردون (الدائنون)|Suppliers (payables)|Fournisseurs (dettes)|Fornitori (debiti)|Proveedores (por pagar)|Поставщики (кредиторка)
+مصروفات مستحقة|Accrued expenses|Charges à payer|Spese maturate|Gastos acumulados|Начисленные расходы
+أوراق دفع|Notes payable|Effets à payer|Effetti passivi|Efectos por pagar|Векселя к оплате
+ضرائب مستحقة|Taxes payable|Impôts à payer|Imposte da pagare|Impuestos por pagar|Налоги к уплате
+مرتبات مستحقة|Salaries payable|Salaires à payer|Stipendi da pagare|Sueldos por pagar|Зарплата к выплате
+أرصدة دائنة أخرى|Other payables|Autres dettes|Altri debiti|Otros acreedores|Прочая кредиторка
+الالتزامات طويلة الأجل|Long-term liabilities|Passifs à long terme|Passività a lungo termine|Pasivos a largo plazo|Долгосрочные обязательства
+قروض طويلة الأجل|Long-term loans|Prêts à long terme|Prestiti a lungo termine|Préstamos a largo plazo|Долгосрочные кредиты
+التزامات أخرى طويلة الأجل|Other long-term liabilities|Autres passifs à long terme|Altre passività a lungo termine|Otros pasivos a largo plazo|Прочие долгосрочные обязательства
+حقوق الملكية|Equity|Capitaux propres|Patrimonio netto|Patrimonio|Капитал
+رأس المال|Share capital|Capital social|Capitale sociale|Capital social|Уставный капитал
+الاحتياطيات|Reserves|Réserves|Riserve|Reservas|Резервы
+الأرباح المرحلة|Retained earnings|Report à nouveau|Utili portati a nuovo|Resultados acumulados|Нераспределённая прибыль
+أرباح / (خسائر) العام|Profit / (loss) for the year|Résultat de l'exercice|Utile / (perdita) d'esercizio|Resultado del ejercicio|Прибыль / (убыток) за год
+التاريخ|Date|Date|Data|Fecha|Дата
+المستند|Document|Document|Documento|Documento|Документ
+النوع|Type|Type|Tipo|Tipo|Тип
+الصنف|Item|Article|Articolo|Artículo|Товар
+الكمية|Quantity|Quantité|Quantità|Cantidad|Кол-во
+السعر|Price|Prix|Prezzo|Precio|Цена
+القيمة|Value|Valeur|Valore|Valor|Сумма
+الحركة|Transaction|Mouvement|Movimento|Movimiento|Операция
+البيان|Description|Libellé|Descrizione|Concepto|Описание
+مدين|Debit|Débit|Dare|Débito|Дебет
+دائن|Credit|Crédit|Avere|Crédito|Кредит
+الرصيد|Balance|Solde|Saldo|Saldo|Сальдо
+المرتجعات|Returns|Retours|Resi|Devoluciones|Возвраты
+السدادات|Payments|Paiements|Pagamenti|Pagos|Платежи
+الوحدة|Unit|Unité|Unità|Unidad|Ед. изм.
+أول المدة|Opening|Ouverture|Iniziale|Inicial|Начало периода
+مشتريات|Purchases|Achats|Acquisti|Compras|Закупки
+مبيعات|Sales|Ventes|Vendite|Ventas|Продажи
+الرصيد الحالي|Current balance|Solde actuel|Saldo attuale|Saldo actual|Текущее сальдо
+متوسط التكلفة|Average cost|Coût moyen|Costo medio|Costo medio|Средняя себестоимость
+سعر البيع|Selling price|Prix de vente|Prezzo di vendita|Precio de venta|Цена продажи
+التكلفة|Cost|Coût|Costo|Costo|Себестоимость
+تكلفة الشراء|Purchase cost|Coût d'achat|Costo d'acquisto|Costo de compra|Закупочная цена
+رصيد أول المدة|Opening balance|Solde d'ouverture|Saldo iniziale|Saldo inicial|Начальный остаток
+تاريخ الإنتاج|Production date|Date de production|Data di produzione|Fecha de producción|Дата производства
+تاريخ الانتهاء|Expiry date|Date d'expiration|Data di scadenza|Fecha de caducidad|Срок годности
+المستخدم|User|Utilisateur|Utente|Usuario|Пользователь
+الوظيفة|Job title|Fonction|Mansione|Puesto|Должность
+الإيصال|Receipt|Reçu|Ricevuta|Recibo|Квитанция
+الجهة|Party|Tiers|Controparte|Contraparte|Контрагент
+التصنيف|Category|Catégorie|Categoria|Categoría|Категория
+وارد|Inflow|Entrée|Entrata|Entrada|Приход
+منصرف|Outflow|Sortie|Uscita|Salida|Расход
+البند|Line item|Poste|Voce|Concepto|Статья
+المبلغ|Amount|Montant|Importo|Importe|Сумма
+إجمالي|Total|Total|Totale|Total|Итого
+إجمالي الأصول|Total assets|Total des actifs|Totale attività|Total activos|Всего активов
+إجمالي الالتزامات وحقوق الملكية|Total liabilities & equity|Total passifs et capitaux propres|Totale passività e patrimonio|Total pasivos y patrimonio|Всего обязательств и капитала
+الفرق|Difference|Écart|Differenza|Diferencia|Разница
+أضف {w} أولًا.|Add {w} first.|Ajoutez d'abord {w}.|Aggiungi prima {w}.|Añada primero {w}.|Сначала добавьте: {w}.
+— اختر الصنف —|— Select item —|— Choisir l'article —|— Scegli articolo —|— Elegir artículo —|— Выберите товар —
+إضافة|Add|Ajouter|Aggiungi|Añadir|Добавить
+إلغاء|Cancel|Annuler|Annulla|Cancelar|Отмена
+أدخل مبلغ وارد أو منصرف|Enter an inflow or outflow amount|Saisissez un montant d'entrée ou de sortie|Inserisci un importo in entrata o uscita|Introduzca un importe de entrada o salida|Введите сумму прихода или расхода
+الصنف موجود|Item already exists|L'article existe déjà|Articolo già esistente|El artículo ya existe|Товар уже существует
+هذا الصنف منتهي الصلاحية! متابعة؟|This item is expired! Continue?|Cet article est périmé ! Continuer ?|Articolo scaduto! Continuare?|¡Este artículo está caducado! ¿Continuar?|Срок годности товара истёк! Продолжить?
+الكمية أكبر من المتاح ({n}). متابعة؟|Quantity exceeds available stock ({n}). Continue?|Quantité supérieure au stock ({n}). Continuer ?|Quantità superiore alla disponibilità ({n}). Continuare?|Cantidad mayor a la disponible ({n}). ¿Continuar?|Количество больше доступного ({n}). Продолжить?
+حفظ التعديل|Save changes|Enregistrer|Salva modifiche|Guardar cambios|Сохранить
+تأكيد الحذف؟|Confirm delete?|Confirmer la suppression ?|Confermare l'eliminazione?|¿Confirmar eliminación?|Подтвердить удаление?
+أنت في وضع المشاهدة فقط.|You are in view-only mode.|Vous êtes en lecture seule.|Sei in modalità sola lettura.|Está en modo de solo lectura.|Режим только просмотра.
+رصيد الخزينة|Cash balance|Solde de caisse|Saldo di cassa|Saldo de caja|Остаток кассы
+صافي المبيعات|Net sales|Ventes nettes|Vendite nette|Ventas netas|Чистые продажи
+مستحقات العملاء|Customer receivables|Créances clients|Crediti verso clienti|Cuentas por cobrar|Долги клиентов
+مستحقات الموردين|Supplier payables|Dettes fournisseurs|Debiti verso fornitori|Cuentas por pagar|Долги поставщикам
+قيمة المخزون|Inventory value|Valeur du stock|Valore del magazzino|Valor del inventario|Стоимость склада
+فرق الميزانية|Balance difference|Écart du bilan|Differenza di bilancio|Diferencia del balance|Разница баланса
+أعلى أرصدة العملاء|Top customer balances|Principaux soldes clients|Principali saldi clienti|Mayores saldos de clientes|Крупнейшие долги клиентов
+لا توجد أرصدة بعد. ابدأ بإضافة العملاء ثم الفواتير.|No balances yet. Start by adding customers, then invoices.|Aucun solde. Ajoutez d'abord des clients puis des factures.|Nessun saldo. Aggiungi prima i clienti e poi le fatture.|Aún no hay saldos. Añada clientes y luego facturas.|Остатков пока нет. Добавьте клиентов, затем счета.
+طريقة الاستخدام|How to use|Mode d'emploi|Come si usa|Cómo usar|Как пользоваться
+رقم المستند|Document no.|N° de document|N. documento|N.º de documento|№ документа
+سعر الوحدة|Unit price|Prix unitaire|Prezzo unitario|Precio unitario|Цена за ед.
+تكلفة الوحدة|Unit cost|Coût unitaire|Costo unitario|Costo unitario|Себестоимость ед.
+تصفية|Filter|Filtre|Filtro|Filtro|Фильтр
+الكل|All|Tous|Tutti|Todos|Все
+إجمالي المستند|Document total|Total du document|Totale documento|Total del documento|Итого по документу
+الصافي|Net|Net|Netto|Neto|Нетто
+تسجيل سداد / رصيد افتتاحي|Record payment / opening balance|Enregistrer paiement / solde d'ouverture|Registra pagamento / saldo iniziale|Registrar pago / saldo inicial|Платёж / начальное сальдо
+تسجيل في الخزينة|Record in cash box|Enregistrer en caisse|Registra in cassa|Registrar en caja|Записать в кассу
+كشف الحساب|Statement|Relevé de compte|Estratto conto|Estado de cuenta|Выписка
+الإجمالي|Total|Total|Totale|Total|Итого
+الفواتير والمشتريات تُعدَّل من تبويبها.|Invoices and purchases are edited from their own tab.|Les factures et achats se modifient dans leur onglet.|Fatture e acquisti si modificano dalla loro scheda.|Las facturas y compras se editan desde su pestaña.|Счета и закупки редактируются на своей вкладке.
+الاسم|Name|Nom|Nome|Nombre|Имя
+الاسم موجود|Name already exists|Ce nom existe déjà|Nome già esistente|El nombre ya existe|Имя уже существует
+الاسم الجديد|New name|Nouveau nom|Nuovo nome|Nuevo nombre|Новое имя
+لا يمكن حذف طرف له حركات. احذف حركاته أولًا.|Cannot delete a party with transactions. Delete its transactions first.|Impossible de supprimer un tiers ayant des mouvements. Supprimez d'abord ses mouvements.|Impossibile eliminare una controparte con movimenti. Elimina prima i suoi movimenti.|No se puede eliminar un tercero con movimientos. Elimine primero sus movimientos.|Нельзя удалить контрагента с операциями. Сначала удалите его операции.
+حذف؟|Delete?|Supprimer ?|Eliminare?|¿Eliminar?|Удалить?
+تنبيه: أصناف منتهية أو قاربت على الانتهاء|Warning: expired or near-expiry items|Attention : articles périmés ou proches de l'expiration|Attenzione: articoli scaduti o in scadenza|Aviso: artículos caducados o por caducar|Внимание: товары с истёкшим или истекающим сроком
+منتهي منذ {n} يوم|Expired {n} days ago|Périmé depuis {n} jours|Scaduto da {n} giorni|Caducado hace {n} días|Истёк {n} дн. назад
+ينتهي اليوم|Expires today|Expire aujourd'hui|Scade oggi|Caduca hoy|Истекает сегодня
+ينتهي خلال {n} يوم|Expires in {n} days|Expire dans {n} jours|Scade tra {n} giorni|Caduca en {n} días|Истекает через {n} дн.
+{n} يوم|{n} days|{n} jours|{n} giorni|{n} días|{n} дн.
+اسم الصنف|Item name|Nom de l'article|Nome articolo|Nombre del artículo|Название товара
+الإنتاج|Production|Production|Produzione|Producción|Производство
+الانتهاء|Expiry|Expiration|Scadenza|Caducidad|Срок
+المتبقي|Remaining|Restant|Rimanente|Restante|Осталось
+منتهي|Expired|Périmé|Scaduto|Caducado|Истёк
+تنبيه الانتهاء قبل (يوم)|Expiry alert before (days)|Alerte d'expiration avant (jours)|Avviso scadenza prima di (giorni)|Alerta de caducidad antes de (días)|Предупреждать за (дней)
+إجمالي قيمة المخزون|Total inventory value|Valeur totale du stock|Valore totale del magazzino|Valor total del inventario|Общая стоимость склада
+مرتبات|Salaries|Salaires|Stipendi|Sueldos|Зарплата
+إيجار|Rent|Loyer|Affitto|Alquiler|Аренда
+مصروفات تشغيل|Operating expenses|Charges d'exploitation|Spese operative|Gastos operativos|Операционные расходы
+أخرى|Other|Autre|Altro|Otro|Другое
+الوارد|Inflows|Entrées|Entrate|Entradas|Приход
+المنصرف|Outflows|Sorties|Uscite|Salidas|Расход
+حركة جديدة|New transaction|Nouveau mouvement|Nuovo movimento|Nuevo movimiento|Новая операция
+رقم الإيصال|Receipt no.|N° de reçu|N. ricevuta|N.º de recibo|№ квитанции
+(تلقائي)|(auto)|(auto)|(auto)|(auto)|(авто)
+الميزانية العمومية التفصيلية|Detailed balance sheet|Bilan détaillé|Bilancio dettagliato|Balance detallado|Подробный баланс
+غير متوازنة|Unbalanced|Non équilibré|Non bilanciato|Descuadrado|Не сбалансирован
+متوازنة|Balanced|Équilibré|Bilanciato|Cuadrado|Сбалансирован
+محاسب|Accountant|Comptable|Contabile|Contador|Бухгалтер
+أمين مخزن|Storekeeper|Magasinier|Magazziniere|Almacenista|Кладовщик
+أمين خزينة|Cashier|Caissier|Cassiere|Cajero|Кассир
+أنا|Me|Moi|Io|Yo|Я
+مستخدم|User|Utilisateur|Utente|Usuario|Пользователь
+عدد الفواتير|Number of invoices|Nombre de factures|Numero di fatture|Número de facturas|Количество счетов
+عدد العملاء|Number of customers|Nombre de clients|Numero di clienti|Número de clientes|Количество клиентов
+عدد فواتير الشراء|Number of purchase invoices|Nombre de factures d'achat|Numero di fatture d'acquisto|Número de facturas de compra|Количество счетов закупки
+إجمالي المشتريات|Total purchases|Total des achats|Totale acquisti|Total compras|Всего закупок
+عدد الموردين|Number of suppliers|Nombre de fournisseurs|Numero di fornitori|Número de proveedores|Количество поставщиков
+عدد الأصناف|Number of items|Nombre d'articles|Numero di articoli|Número de artículos|Количество товаров
+أصناف قاربت الانتهاء|Items nearing expiry|Articles proches de l'expiration|Articoli in scadenza|Artículos por caducar|Товары с истекающим сроком
+أصناف نفد رصيدها|Out-of-stock items|Articles en rupture|Articoli esauriti|Artículos agotados|Товары закончились
+إجمالي الوارد|Total inflows|Total des entrées|Totale entrate|Total entradas|Всего приход
+إجمالي المنصرف|Total outflows|Total des sorties|Totale uscite|Total salidas|Всего расход
+عدد الحركات|Number of transactions|Nombre de mouvements|Numero di movimenti|Número de movimientos|Количество операций
+أهلًا بك يا|Welcome,|Bienvenue,|Benvenuto,|Bienvenido,|Добро пожаловать,
+وظيفتك:|Your job:|Votre fonction :|La tua mansione:|Tu puesto:|Ваша должность:
+لم تُحدَّد وظيفتك بعد. يحددها المسؤول من تبويب «المستخدمون».|Your job is not set yet. The admin sets it from the Users tab.|Votre fonction n'est pas encore définie. L'administrateur la définit dans l'onglet Utilisateurs.|La tua mansione non è ancora impostata. L'amministratore la imposta dalla scheda Utenti.|Su puesto aún no está definido. El administrador lo define en la pestaña Usuarios.|Должность ещё не задана. Администратор задаёт её на вкладке «Пользователи».
+تاريخ اليوم:|Today:|Aujourd'hui :|Oggi:|Hoy:|Сегодня:
+مهامك اليومية|Your daily tasks|Vos tâches quotidiennes|Le tue attività quotidiane|Tus tareas diarias|Ваши ежедневные задачи
+أنجزت {a} من {b}|Completed {a} of {b}|Terminé {a} sur {b}|Completate {a} su {b}|Completadas {a} de {b}|Выполнено {a} из {b}
+لا توجد مهام مسجّلة لك بعد.|No tasks assigned to you yet.|Aucune tâche enregistrée pour vous.|Nessuna attività assegnata.|Aún no tiene tareas asignadas.|Задач пока нет.
+إنجازات العمل|Work achievements|Réalisations|Risultati di lavoro|Logros del trabajo|Показатели работы
+سجلّك أنت|Your own activity|Votre activité|La tua attività|Tu actividad|Ваша активность
+سجلات أدخلتها اليوم|Records you entered today|Saisies du jour|Registrazioni di oggi|Registros de hoy|Записей за сегодня
+هذا الشهر|This month|Ce mois-ci|Questo mese|Este mes|В этом месяце
+الإجمالي|Total|Total|Totale|Total|Итого
+المستخدم موجود|User already exists|L'utilisateur existe déjà|Utente già esistente|El usuario ya existe|Пользователь уже существует
+لا يمكنك حذف نفسك|You cannot delete yourself|Vous ne pouvez pas vous supprimer|Non puoi eliminare te stesso|No puede eliminarse a sí mismo|Нельзя удалить себя
+حذف المستخدم من القائمة؟|Remove user from the list?|Retirer l'utilisateur de la liste ?|Rimuovere l'utente dall'elenco?|¿Quitar al usuario de la lista?|Удалить пользователя из списка?
+صلاحيتك الحالية:|Your current access:|Votre accès actuel :|Il tuo accesso attuale:|Su acceso actual:|Ваш доступ:
+إضافة مستخدم جديد|Add new user|Ajouter un utilisateur|Aggiungi nuovo utente|Añadir usuario nuevo|Добавить пользователя
+بحث بالاسم|Search by name|Rechercher par nom|Cerca per nome|Buscar por nombre|Поиск по имени
+بحث|Search|Rechercher|Cerca|Buscar|Поиск
+بدون اسم|No name|Sans nom|Senza nome|Sin nombre|Без имени
+لا نتائج.|No results.|Aucun résultat.|Nessun risultato.|Sin resultados.|Нет результатов.
+اسم الموظف|Employee name|Nom de l'employé|Nome dipendente|Nombre del empleado|Имя сотрудника
+إضافة موظف|Add employee|Ajouter l'employé|Aggiungi dipendente|Añadir empleado|Добавить сотрудника
+المهام اليومية (كل مهمة في سطر)|Daily tasks (one per line)|Tâches quotidiennes (une par ligne)|Attività quotidiane (una per riga)|Tareas diarias (una por línea)|Ежедневные задачи (по одной в строке)
+— اختر —|— Select —|— Choisir —|— Scegli —|— Elegir —|— Выбрать —
+التعديل متاح للمسؤول فقط.|Only the admin can edit.|Seul l'administrateur peut modifier.|Solo l'amministratore può modificare.|Solo el administrador puede editar.|Редактировать может только администратор.
+جاهز|Ready|Prêt|Pronto|Listo|Готово
+المهام|Tasks|Tâches|Attività|Tareas|Задачи
+لون البرنامج|Program color|Couleur du programme|Colore del programma|Color del programa|Цвет программы
+لون مخصص|Custom color|Couleur personnalisée|Colore personalizzato|Color personalizado|Свой цвет
+اللغة|Language|Langue|Lingua|Idioma|Язык
+الوضع|Mode|Mode|Modalità|Modo|Режим
+تلقائي|Auto|Auto|Auto|Automático|Авто
+فاتح|Light|Clair|Chiaro|Claro|Светлый
+داكن|Dark|Sombre|Scuro|Oscuro|Тёмный
+عن البرنامج|About|À propos|Informazioni|Acerca de|О программе
+اسم البرنامج|Program name|Nom du programme|Nome del programma|Nombre del programa|Название программы
+رقم الإصدار|Version number|Numéro de version|Numero di versione|Número de versión|Номер версии
+تاريخ الإصدار|Release date|Date de publication|Data di rilascio|Fecha de lanzamiento|Дата выпуска
+إعادة ضبط اللون|Reset color|Réinitialiser la couleur|Reimposta colore|Restablecer color|Сбросить цвет
+تُحفظ هذه الإعدادات على هذا الجهاز فقط.|These settings are saved on this device only.|Ces paramètres sont enregistrés sur cet appareil uniquement.|Queste impostazioni sono salvate solo su questo dispositivo.|Estos ajustes se guardan solo en este dispositivo.|Эти настройки сохраняются только на этом устройстве.
+أضف العملاء والموردين والأصناف، ثم سجّل الفواتير والمشتريات: تظهر تلقائيًا في كشوف الحساب وتحدّث المخزون. السدادات تُسجّل من كشف الحساب وتدخل الخزينة تلقائيًا. زر ✎ للتعديل و ✕ للحذف. الميزانية تسحب النقدية والعملاء والمخزون والموردين تلقائيًا. زر «تصدير Excel» يصدّر الشاشة الحالية، و«تصدير الكل» كل الشيتات.|Add customers, suppliers and items, then record invoices and purchases: they appear automatically in the statements and update stock. Payments are recorded from the statement and go to the cash box automatically. Use ✎ to edit and ✕ to delete. The balance sheet pulls cash, customers, inventory and suppliers automatically. “Export Excel” exports the current screen and “Export all” exports every sheet.|Ajoutez clients, fournisseurs et articles, puis saisissez factures et achats : ils apparaissent automatiquement dans les relevés et mettent à jour le stock. Les paiements se saisissent depuis le relevé et vont automatiquement en caisse. ✎ pour modifier, ✕ pour supprimer. Le bilan reprend automatiquement la caisse, les clients, le stock et les fournisseurs. « Exporter Excel » exporte l'écran actuel et « Tout exporter » toutes les feuilles.|Aggiungi clienti, fornitori e articoli, poi registra fatture e acquisti: compaiono automaticamente negli estratti conto e aggiornano il magazzino. I pagamenti si registrano dall'estratto conto e vanno automaticamente in cassa. Usa ✎ per modificare e ✕ per eliminare. Il bilancio recupera automaticamente cassa, clienti, magazzino e fornitori. «Esporta Excel» esporta la schermata corrente e «Esporta tutto» tutti i fogli.|Añada clientes, proveedores y artículos, y luego registre facturas y compras: aparecen automáticamente en los estados de cuenta y actualizan el inventario. Los pagos se registran desde el estado de cuenta y pasan a la caja automáticamente. Use ✎ para editar y ✕ para eliminar. El balance toma automáticamente caja, clientes, inventario y proveedores. «Exportar Excel» exporta la pantalla actual y «Exportar todo» todas las hojas.|Добавьте клиентов, поставщиков и товары, затем вводите счета и закупки: они автоматически попадают в выписки и обновляют склад. Платежи вводятся из выписки и автоматически идут в кассу. ✎ — изменить, ✕ — удалить. Баланс автоматически берёт кассу, клиентов, склад и поставщиков. «Экспорт в Excel» выгружает текущий экран, «Экспорт всего» — все листы.
+عند عمل فاتورة اختر الصنف من القائمة ويُملأ السعر تلقائيًا (ويمكن تعديله). في المشتريات يُملأ سعر التكلفة.|When creating an invoice, pick the item from the list and the price is filled in automatically (you can edit it). In purchases, the cost price is filled in.|Lors d'une facture, choisissez l'article dans la liste : le prix se remplit automatiquement (modifiable). Pour les achats, le coût est rempli.|Nella fattura scegli l'articolo dall'elenco: il prezzo si compila da solo (modificabile). Negli acquisti si compila il costo.|Al crear una factura elija el artículo de la lista y el precio se completa solo (editable). En compras se completa el costo.|При создании счёта выберите товар из списка — цена подставится автоматически (её можно изменить). В закупках подставляется себестоимость.
+الأصناف تُدار من تبويب «الأصناف». الرصيد يتحدث تلقائيًا: + المشتريات − المبيعات، والمرتجعات تعكسها.|Items are managed from the «Items» tab. The balance updates automatically: + purchases − sales, and returns reverse them.|Les articles se gèrent dans l'onglet « Articles ». Le solde se met à jour : + achats − ventes, les retours les inversent.|Gli articoli si gestiscono dalla scheda «Articoli». Il saldo si aggiorna: + acquisti − vendite, i resi li invertono.|Los artículos se gestionan en la pestaña «Artículos». El saldo se actualiza: + compras − ventas; las devoluciones las invierten.|Товары ведутся на вкладке «Товары». Остаток обновляется: + закупки − продажи, возвраты их отменяют.
+كل من تشاركه هذه الصفحة يظهر هنا تلقائيًا أول ما يفتح البرنامج. المسؤول يحدد وظيفة كل مستخدم ومهامه (كل مهمة في سطر)، فتظهر في شاشته الرئيسية مع لوحة إنجازات مناسبة لوظيفته.|Everyone you share this page with appears here automatically when they first open the program. The admin sets each user's job and tasks (one task per line); they show on the user's home screen with a dashboard suited to the job.|Toute personne avec qui vous partagez cette page apparaît ici dès sa première ouverture. L'administrateur définit la fonction et les tâches (une par ligne), affichées sur l'accueil avec un tableau de bord adapté.|Chi riceve la condivisione compare qui alla prima apertura. L'amministratore imposta mansione e attività (una per riga), mostrate nella home con una dashboard adatta.|Quien reciba esta página aparece aquí al abrirla por primera vez. El administrador define puesto y tareas (una por línea), que se muestran en su inicio con un panel adecuado.|Каждый, с кем вы поделились страницей, появляется здесь при первом входе. Администратор задаёт должность и задачи (по одной в строке) — они видны на главной с подходящей панелью показателей.
+لإضافة مستخدم: اضغط زر المشاركة (Share) للصفحة في Claude وأضف الشخص. صلاحية «Contributor» تسمح له بتسجيل وتعديل البيانات، و«Viewer» للمشاهدة فقط.|To add a user: click the Share button of the page in Claude and add the person. «Contributor» lets them enter and edit data, «Viewer» is view only.|Pour ajouter un utilisateur : bouton Partager (Share) de la page dans Claude. « Contributor » peut saisir et modifier, « Viewer » est en lecture seule.|Per aggiungere un utente: pulsante Condividi (Share) della pagina in Claude. «Contributor» inserisce e modifica, «Viewer» sola lettura.|Para añadir un usuario: botón Compartir (Share) de la página en Claude. «Contributor» registra y edita; «Viewer» solo lee.|Чтобы добавить пользователя: кнопка «Поделиться» (Share) страницы в Claude. «Contributor» вводит и правит данные, «Viewer» — только просмотр.
+تنبيه: لو عدّل شخصان في نفس اللحظة تُحفظ آخر عملية.|Note: if two people edit at the same moment, the last operation is saved.|Attention : si deux personnes modifient en même temps, la dernière opération est enregistrée.|Attenzione: se due persone modificano insieme, vale l'ultima operazione.|Aviso: si dos personas editan a la vez, se guarda la última operación.|Внимание: если двое правят одновременно, сохраняется последняя операция.
+١) من حسابات Claude: ابحث بالاسم وأضفه، ثم حدد وظيفته ومهامه. ولكي يدخل البرنامج يجب أن تشاركه الصفحة من زر المشاركة (Share) في Claude.|1) From Claude accounts: search by name and add the person, then set their job and tasks. To let them in, you must share the page with them via the Share button in Claude.|1) Depuis les comptes Claude : recherchez par nom et ajoutez, puis définissez fonction et tâches. Pour lui donner accès, partagez la page via le bouton Share de Claude.|1) Da account Claude: cerca per nome e aggiungi, poi imposta mansione e attività. Per farlo entrare, condividi la pagina con il pulsante Share di Claude.|1) Desde cuentas de Claude: busque por nombre y añada, luego defina puesto y tareas. Para que entre, comparta la página con el botón Share de Claude.|1) Из аккаунтов Claude: найдите по имени и добавьте, затем задайте должность и задачи. Чтобы человек вошёл, поделитесь страницей кнопкой Share в Claude.
+٢) موظف بدون حساب: أضفه بالاسم والوظيفة ليظهر في القائمة.|2) Employee without an account: add them by name and job to show in the list.|2) Employé sans compte : ajoutez-le par nom et fonction pour l'afficher dans la liste.|2) Dipendente senza account: aggiungilo con nome e mansione per mostrarlo nell'elenco.|2) Empleado sin cuenta: añádalo con nombre y puesto para que aparezca en la lista.|2) Сотрудник без аккаунта: добавьте по имени и должности, чтобы он был в списке.`;
+const DICT={};DT.split("\n").forEach(l=>{const a=l.split("|");if(a.length===6)DICT[a[0]]=a.slice(1)});
+const KEYS=Object.keys(DICT).filter(k=>k.length>=4&&!k.includes("{")).sort((a,b)=>b.length-a.length);
+const LANGS=[["ar","العربية"],["en","English"],["fr","Français"],["it","Italiano"],["es","Español"],["ru","Русский"]];
+const COLORS=["#1f3864","#0f766e","#15803d","#6d28d9","#be185d","#c2410c","#b91c1c","#334155"];
+const APP={name:"برنامج الحسابات المتكامل",ver:"2.1.0",date:"2026-11-13"};
+let SET={lang:"ar",color:"",mode:"auto"};try{Object.assign(SET,JSON.parse(localStorage.getItem("acc_set")||"{}"))}catch(e){}
+const LI=()=>Math.max(0,LANGS.findIndex(x=>x[0]===SET.lang));
+function T(k,v){let s=LI()>0&&DICT[k]?DICT[k][LI()-1]:k;if(v)for(const q in v)s=s.split("{"+q+"}").join(v[q]);return s}
+const al=m=>window.alert(T(m)),cf=m=>window.confirm(T(m));
+let _p=[];const RX=/\u0001(\d+)\u0002/g;
+const esc=s=>{const v=String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));if(DICT[String(s)])return v;_p.push(v);return "\u0001"+(_p.length-1)+"\u0002"};
+function tr(h){if(LI()>0)h=h.replace(/(<[^>]*>)|([^<]+)/g,(m,t,x)=>{if(t||!/[\u0600-\u06FF]/.test(x))return m;const q=x.trim();if(DICT[q])return x.replace(q,DICT[q][LI()-1]);if(x.length>70)return x;const i=LI()-1;return KEYS.reduce((s,k)=>s.includes(k)?s.split(k).join(DICT[k][i]):s,x)});return h.replace(RX,(m,i)=>_p[i])}
+function applyUI(){const r=document.documentElement;r.lang=SET.lang;r.dir=SET.lang==="ar"?"rtl":"ltr";SET.mode==="auto"?r.removeAttribute("data-theme"):r.setAttribute("data-theme",SET.mode);
+ if(/^#[0-9a-f]{6}$/i.test(SET.color)){const n=parseInt(SET.color.slice(1),16),l=(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255;r.style.setProperty("--pr",SET.color);r.style.setProperty("--pt",l>.6?"#0b1220":"#ffffff")}else{r.style.removeProperty("--pr");r.style.removeProperty("--pt")}
+ document.title=T(APP.name);$("ttl").textContent="📒 "+document.title;[["b1","تصدير Excel"],["b2","تصدير الكل"],["b3","نسخة احتياطية"],["b4","استعادة"]].forEach(([i,k])=>{$(i).textContent=T(k)})}
+function setS(k,v){SET[k]=v;try{localStorage.setItem("acc_set",JSON.stringify(SET))}catch(e){}render()}
+function sett(){const sel=(k,arr)=>`<select onchange="setS('${k}',this.value)">${arr.map(([v,t])=>`<option value="${v}"${SET[k]===v?" selected":""}>${t}</option>`).join("")}</select>`;
+ return `<div class="card"><h2>اللغة</h2><label style="max-width:260px">اللغة${sel("lang",LANGS)}</label></div>
+ <div class="card"><h2>لون البرنامج</h2><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">${COLORS.map(c=>`<button type="button" onclick="setS('color','${c}')" style="width:36px;height:36px;border-radius:50%;background:${c};cursor:pointer;border:${SET.color===c?"3px solid var(--tx)":"1px solid var(--bd)"}"></button>`).join("")}<label style="flex:0 0 auto">لون مخصص<input type="color" value="${SET.color||"#1f3864"}" onchange="setS('color',this.value)" style="width:56px;padding:2px"></label><button type="button" class="g2" onclick="setS('color','')">إعادة ضبط اللون</button></div>
+ <label style="max-width:260px;margin-top:12px">الوضع${sel("mode",[["auto","تلقائي"],["light","فاتح"],["dark","داكن"]])}</label><p class="mu">تُحفظ هذه الإعدادات على هذا الجهاز فقط.</p></div>
+ <div class="card"><h2>عن البرنامج</h2>${tb(["البند","القيمة"],[["اسم البرنامج",APP.name],["رقم الإصدار",APP.ver],["تاريخ الإصدار",APP.date]].map(r=>`<tr><td>${r[0]}</td><td class="n">${r[1]}</td></tr>`))}</div>`}
+const f=n=>(+n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const cl=n=>n<0?"neg":"",$=id=>document.getElementById(id),stat=t=>{$("st").textContent=T(t)};
+const sum=(a,fn)=>a.reduce((x,y)=>x+(+fn(y)||0),0);
+function save(){try{localStorage.setItem("acc_v1",JSON.stringify(S))}catch(e){}
+ clearTimeout(tmr);tmr=setTimeout(async()=>{if(!dbDoc||!canW){stat("محفوظ في المتصفح");return}
+  try{await dbDoc.set({json:JSON.stringify(S)});stat("تم الحفظ ✓")}catch(e){stat("الحفظ السحابي تعذر، محفوظ في المتصفح")}},600)}
+function loadJ(j){S=Object.assign(def(),JSON.parse(j));render()}
+(async()=>{try{if(!window.claude)return;const [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);if(!db)return;
+ dbDoc=db.collection("app").doc("state");
+ if(user){const ow=await user.isOwner(),ce=await user.canEdit(),cw=await user.can("data.write");if(cw===false)canW=false;ui.owner=ow;ui.who=ow?"مالك (صلاحية كاملة)":canW?"مستخدم (يسجّل بيانات)":"مشاهدة فقط";ui.admin=!!(ow||ce);ui.me=(await user.id())||"local";if(ui.me!=="local")delete S.users.local}
+ const s=await dbDoc.get();
+ if(s.exists&&s.data().json)loadJ(s.data().json);
+ else if(canW){try{const id=user&&await user.id();if(id&&!S.cus.length&&!S.inv.length){const o=await db.collection("data/users/"+id).doc("state").get();if(o.exists&&o.data().json)loadJ(o.data().json)}}catch(e){}save()}
+ if(ui.me!=="local"&&canW&&!S.users[ui.me]){S.users[ui.me]={job:ui.owner?"مدير":"",tasks:""};save()}
+ await names();
+ dbDoc.onSnapshot(sn=>{if(sn.metadata.hasPendingWrites||!sn.exists)return;const j=sn.data().json;if(j&&j!==JSON.stringify(S)){loadJ(j);names()}});
+ render();stat("متصل ✓")}catch(e){}})();
+async function names(){try{const u=await claude.use("user");if(!u)return;const ps=await u.profiles(Object.keys(S.users).filter(x=>x!=="local"&&!S.users[x].name));Object.entries(ps).forEach(([k,q])=>{if(q.name)ui.names[k]=q.name});render()}catch(e){}}
+async function dl(name,data){try{if(window.claude){const d=await claude.use("downloads");if(d){await d.save({filename:name,data});return}}
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data]));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}catch(e){al("تعذر تنزيل الملف هنا")}}
+const backup=()=>dl("accounts-backup-"+today+".json",JSON.stringify(S));
+function restore(el){const r=new FileReader();r.onload=()=>{try{loadJ(r.result);save();al("تمت الاستعادة")}catch(e){al("ملف غير صالح")}};if(el.files[0])r.readAsText(el.files[0])}
+
+// ---------- calculations ----------
+const val=l=>(+l.qty||0)*(+l.price||0);
+function docs(k){const m={};S[P[k].L].forEach(l=>{const q=l.no+"|"+l.type;(m[q]=m[q]||{date:l.date,no:l.no,type:l.type,customer:l.customer,total:0}).total+=val(l)});return Object.values(m)}
+function balances(k){const d=docs(k),p=S[P[k].Y],a=P[k];return S[a.list].map(n=>{const o=sum(p.filter(x=>x.customer===n&&x.type==="رصيد افتتاحي"),x=>x.amount),i=sum(d.filter(x=>x.customer===n&&x.type===a.P),x=>x.total),r=sum(d.filter(x=>x.customer===n&&x.type===a.M),x=>x.total),y=sum(p.filter(x=>x.customer===n&&x.type==="سداد"),x=>x.amount);return {n,o,i,r,p:y,b:o+i-r-y}})}
+function ledger(k){const e=[],a=P[k];docs(k).forEach(d=>e.push({date:d.date,customer:d.customer,type:d.type,no:d.no,desc:"",dr:d.type===a.P?d.total:0,cr:d.type===a.M?d.total:0}));
+ S[a.Y].forEach(p=>e.push({id:p.id,date:p.date,customer:p.customer,type:p.type,no:p.no,desc:p.desc,dr:p.type==="رصيد افتتاحي"?+p.amount:0,cr:p.type==="سداد"?+p.amount:0}));
+ e.forEach((x,i)=>x.i=i);e.sort((a,b)=>(a.date>b.date)-(a.date<b.date)||a.i-b.i);const run={};e.forEach(x=>{run[x.customer]=(run[x.customer]||0)+x.dr-x.cr;x.bal=run[x.customer]});return e}
+function treRows(){let b=+S.open||0;return S.tre.map((r,i)=>({r,i})).sort((a,c)=>(a.r.date>c.r.date)-(a.r.date<c.r.date)||a.i-c.i).map(({r})=>{b+=(+r.in||0)-(+r.out||0);return {...r,bal:b}})}
+const cash=()=>(+S.open||0)+sum(S.tre,r=>(+r.in||0)-(+r.out||0)),recv=()=>sum(balances("c"),x=>x.b),pay=()=>sum(balances("s"),x=>x.b);
+function stock(){return S.items.map(it=>{const q=(L,t)=>sum(S[L].filter(l=>l.item===it.name&&l.type===t),l=>l.qty),bq=q("pur","شراء"),bp=sum(S.pur.filter(l=>l.item===it.name&&l.type==="شراء"),val),buy=bq-q("pur","مرتجع شراء"),sold=q("inv","فاتورة")-q("inv","مرتجع"),o=+it.qty0||0,den=o+bq,avg=den>0?(o*(+it.cost0||0)+bp)/den:(+it.cost0||0),on=o+buy-sold;return {...it,o,buy,sold,on,avg,v:on*avg}})}
+const invVal=()=>sum(stock(),x=>x.v);
+const BUD=[["الأصول المتداولة",[["cash","النقدية بالخزينة"],["recv","أرصدة العملاء (المدينون)"],["bank","البنوك / حسابات جارية"],["inventory","المخزون"],["prepaid","مصروفات مقدمة"],["notesRec","أوراق قبض"],["otherCA","أرصدة مدينة أخرى"]]],
+["الأصول الثابتة",[["land","الأراضي"],["build","المباني"],["equip","الآلات والمعدات"],["veh","السيارات"],["furn","الأثاث والتجهيزات"],["it","أجهزة حاسب وبرامج"],["accdep","مجمع الإهلاك (بالسالب)"]]],
+["الالتزامات المتداولة",[["suppliers","الموردون (الدائنون)"],["accrued","مصروفات مستحقة"],["notesPay","أوراق دفع"],["taxes","ضرائب مستحقة"],["salaries","مرتبات مستحقة"],["otherCL","أرصدة دائنة أخرى"]]],
+["الالتزامات طويلة الأجل",[["loans","قروض طويلة الأجل"],["otherLL","التزامات أخرى طويلة الأجل"]]],
+["حقوق الملكية",[["capital","رأس المال"],["reserves","الاحتياطيات"],["retained","الأرباح المرحلة"],["profit","أرباح / (خسائر) العام"]]]];
+const AUTO={cash:cash,recv:recv,inventory:invVal,suppliers:pay};
+const bv=k=>AUTO[k]?AUTO[k]():(+S.bud[k]||0),secT=s=>sum(s[1],x=>bv(x[0])),totA=()=>secT(BUD[0])+secT(BUD[1]),totL=()=>secT(BUD[2])+secT(BUD[3])+secT(BUD[4]);
+
+// ---------- Excel ----------
+function sheets(){const ln=k=>[["التاريخ","المستند","النوع",P[k].lb,"الصنف","الكمية","السعر","القيمة"],...S[P[k].L].map(l=>[l.date,l.no,l.type,l.customer,l.item,l.qty,l.price,val(l)])],
+ lg=k=>[["التاريخ",P[k].lb,"الحركة","المستند","البيان","مدين","دائن","الرصيد"],...ledger(k).map(x=>[x.date,x.customer,x.type,x.no,x.desc,x.dr,x.cr,x.bal])],
+ pt=k=>[[P[k].lb,"رصيد افتتاحي","فواتير/مشتريات","مرتجعات","سدادات","الرصيد"],...balances(k).map(x=>[x.n,x.o,x.i,x.r,x.p,x.b])];
+ return {"الفواتير":ln("c"),"كشف حساب العملاء":lg("c"),"العملاء":pt("c"),"المشتريات":ln("s"),"كشف حساب الموردين":lg("s"),"الموردون":pt("s"),
+ "المخزون":[["الصنف","الوحدة","رصيد أول","مشتريات (صافي)","مبيعات (صافي)","الرصيد الحالي","متوسط التكلفة","القيمة"],...stock().map(x=>[x.name,x.unit,x.o,x.buy,x.sold,x.on,x.avg,x.v])],
+ "الأصناف":[["الصنف","الوحدة","سعر البيع","التكلفة","رصيد أول المدة","تاريخ الإنتاج","تاريخ الانتهاء"],...S.items.map(x=>[x.name,x.unit,x.price,x.cost0,x.qty0,x.prod,x.exp])],
+ "المستخدمون":[["المستخدم","الوظيفة","المهام"],...Object.entries(S.users).map(([i,u])=>[nm(i),u.job,u.tasks])],
+ "الخزينة":[["التاريخ","الإيصال","البيان","الجهة","التصنيف","وارد","منصرف","الرصيد"],["","","رصيد أول المدة","","","","",+S.open||0],...treRows().map(r=>[r.date,r.no,r.desc,r.party,r.cat,r.in,r.out,r.bal])],
+ "الميزانية":[["البند","المبلغ"],...BUD.flatMap(s=>[[s[0],""],...s[1].map(x=>[x[1],bv(x[0])]),["إجمالي "+s[0],secT(s)]]),["إجمالي الأصول",totA()],["إجمالي الالتزامات وحقوق الملكية",totL()],["الفرق",totA()-totL()]]}}
+function xp(names){if(!window.XLSX){al("مكتبة Excel لم تُحمّل، جرّب لاحقًا");return}const all=sheets(),wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};
+ names.forEach(n=>{const ws=XLSX.utils.aoa_to_sheet(all[n]);ws["!cols"]=all[n][0].map(()=>({wch:20}));XLSX.utils.book_append_sheet(wb,ws,n)});
+ dl("accounts-"+(names.length>1?"all":names[0])+"-"+today+".xlsx",XLSX.write(wb,{bookType:"xlsx",type:"array"}))}
+
+// ---------- ui helpers ----------
+const opts=(arr,all)=>(all?`<option value="">${all}</option>`:"")+arr.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+const tb=(h,rows,foot)=>`<div class="tw"><table><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr>${rows.join("")}${foot||""}</table></div>`;
+const nd=(v,c)=>`<td class="n ${c||""}">${v}</td>`,acts=(k,id)=>`<td><button class="ed" onclick="ed('${k}','${id}')">✎</button><button class="x" onclick="del('${k}','${id}')">✕</button></td>`;
+const noList=w=>`<p class="mu">${T("أضف {w} أولًا.",{w:T(w)})}</p>`;
+function form(k,fs,extra){const L=ui.last[k]||{};return `<form data-k="${k}" onsubmit="sub(event,'${k}')">${fs.map(([n,l,t,o])=>`<label>${l}${n==="item"&&S.items.length&&(k==="inv"||k==="pur")?`<select name="item" required onchange="pick(this)">${opts(S.items.map(i=>i.name),"— اختر الصنف —")}</select>`:Array.isArray(t)?`<select name="${n}">${opts(t)}</select>`:`<input name="${n}" type="${t||"text"}" ${t==="number"?'step="any"':""} ${t==="date"?`value="${L[n]||(o?"":today)}"`:`value="${esc(L[n]||"")}"`} ${n==="item"?'list="dl"':""} ${o?"":"required"}>`}</label>`).join("")}${extra||""}<button class="b">إضافة</button><button type="button" class="g2" hidden onclick="ui.e=null;render()">إلغاء</button></form>`}
+const NUM=["qty","price","in","out","amount","qty0","cost0"];
+function sub(e,k){e.preventDefault();const d=Object.fromEntries(new FormData(e.target));NUM.forEach(n=>{if(n in d)d[n]=+d[n]||0});
+ if(k==="tre"&&!(d.in||d.out)){al("أدخل مبلغ وارد أو منصرف");return}
+ if(k==="items"&&!ui.e&&S.items.some(x=>x.name===d.name)){al("الصنف موجود");return}
+ if(k==="inv"&&d.type==="فاتورة"){const it=stock().find(x=>x.name===d.item);if(it){if(it.exp&&it.exp<today&&!cf("هذا الصنف منتهي الصلاحية! متابعة؟"))return;if(d.qty>it.on&&!cf(T("الكمية أكبر من المتاح ({n}). متابعة؟",{n:it.on})))return}}
+ const tr=d.tr;delete d.tr;let rec,old;if(ui.e&&ui.e.k===k){rec=S[k].find(x=>x.id===ui.e.id);old=rec.name;Object.assign(rec,d);if(k==="items"&&old!==d.name)[...S.inv,...S.pur].forEach(l=>{if(l.item===old)l.item=d.name})}else{rec={id:uid(),by:ui.me,at:today,...d};S[k].push(rec)}
+ if(k==="pay"||k==="spay"){const a=k==="pay"?P.c:P.s,t=S.tre.find(x=>x.pid===rec.id);
+  if(rec.type==="سداد"&&(t||(tr&&!ui.e)))Object.assign(t||S.tre[S.tre.push({id:uid(),pid:rec.id,cat:a.cat})-1],{date:rec.date,no:rec.no,desc:a.tr+rec.customer,party:rec.customer,in:0,out:0,[a.io]:rec.amount})}
+ if(k==="inv"||k==="pur")ui.last[k]={date:d.date,no:d.no,type:d.type,customer:d.customer};
+ ui.e=null;save();render()}
+function pick(s){const fm=s.form,it=S.items.find(i=>i.name===s.value),p=fm.elements.price;if(it&&p)p.value=fm.dataset.k==="pur"?(it.cost0||""):(it.price||"")}
+function ed(k,id){ui.e={k,id};const fm=document.querySelector(`form[data-k="${k}"]`),r=S[k].find(x=>x.id===id);if(!fm||!r)return;
+ [...fm.elements].forEach(el=>{if(el.name&&r[el.name]!==undefined)el.value=r[el.name];if(el.name==="tr")el.checked=false});
+ fm.querySelector(".b").textContent="حفظ التعديل";fm.querySelector(".g2").hidden=false;fm.scrollIntoView({behavior:"smooth",block:"center"})}
+function del(k,id){if(!cf("تأكيد الحذف؟"))return;S[k]=S[k].filter(x=>x.id!==id);if(k==="pay"||k==="spay")S.tre=S.tre.filter(x=>x.pid!==id);save();render()}
+function render(){_p=[];applyUI();document.body.classList.toggle("ro",!canW);$("nav").innerHTML=tr(TABS.map(t=>`<button class="${ui.tab===t[0]?"on":""}" onclick="ui.tab='${t[0]}';ui.e=null;render()">${t[1]}</button>`).join(""));
+$("m").innerHTML=tr((canW?"":'<div class="card mu">أنت في وضع المشاهدة فقط.</div>')+`<datalist id="dl">${S.items.map(i=>`<option value="${esc(i.name)}">`).join("")}</datalist>`+({home,dash,inv:()=>linesPage("c"),pur:()=>linesPage("s"),stm:()=>stmtPage("c"),sst:()=>stmtPage("s"),cus:()=>partyPage("c"),sup:()=>partyPage("s"),itm,stk,tre,bud,usr,set:sett})[ui.tab]())}
+function dash(){const d=docs("c"),si=sum(d.filter(x=>x.type==="فاتورة"),x=>x.total),sr=sum(d.filter(x=>x.type==="مرتجع"),x=>x.total),df=totA()-totL(),b=balances("c").filter(x=>x.b).sort((a,c)=>c.b-a.b).slice(0,5),K=(t,v,c)=>`<div class="kpi"><small>${t}</small><b class="n ${c||""}">${f(v)}</b></div>`;
+ return expWarn()+`<div class="grid">${K("رصيد الخزينة",cash(),cl(cash()))}${K("صافي المبيعات",si-sr)}${K("مستحقات العملاء",recv())}${K("مستحقات الموردين",pay())}${K("قيمة المخزون",invVal())}${K("فرق الميزانية",df,Math.abs(df)<.005?"pos":"neg")}</div>
+ <div class="card" style="margin-top:14px"><h2>أعلى أرصدة العملاء</h2>${b.length?tb(["العميل","الرصيد"],b.map(x=>`<tr><td>${esc(x.n)}</td>${nd(f(x.b),cl(x.b))}</tr>`)):'<p class="mu">لا توجد أرصدة بعد. ابدأ بإضافة العملاء ثم الفواتير.</p>'}</div>
+ <div class="card"><h2>طريقة الاستخدام</h2><p class="mu">أضف العملاء والموردين والأصناف، ثم سجّل الفواتير والمشتريات: تظهر تلقائيًا في كشوف الحساب وتحدّث المخزون. السدادات تُسجّل من كشف الحساب وتدخل الخزينة تلقائيًا. زر ✎ للتعديل و ✕ للحذف. الميزانية تسحب النقدية والعملاء والمخزون والموردين تلقائيًا. زر «تصدير Excel» يصدّر الشاشة الحالية، و«تصدير الكل» كل الشيتات.</p></div>`}
+function linesPage(k){const a=P[k],L=a.L,rows=S[L].filter(l=>!ui.fc||l.customer===ui.fc),seen={},dt=Object.fromEntries(docs(k).map(x=>[x.no+"|"+x.type,x.total])),sp=sum(rows.filter(l=>l.type===a.P),val),sm=sum(rows.filter(l=>l.type===a.M),val);
+ return `<div class="card"><h2>${a.P} / ${a.M}</h2>${S[a.list].length?form(L,[["date","التاريخ","date"],["no","رقم المستند"],["type","النوع",[a.P,a.M]],["customer",a.lb,S[a.list]],["item","الصنف"],["qty","الكمية","number"],["price",k==="c"?"سعر الوحدة":"تكلفة الوحدة","number"]]):noList(a.lb)}</div>
+ <div class="card"><label style="max-width:260px;margin-bottom:10px">تصفية<select onchange="ui.fc=this.value;render()">${opts(S[a.list],"الكل")}</select></label>${tb(["التاريخ","المستند","النوع",a.lb,"الصنف","الكمية","السعر","القيمة","إجمالي المستند",""],rows.map(l=>{const q=l.no+"|"+l.type,fi=!seen[q];seen[q]=1;return `<tr><td>${l.date}</td><td>${esc(l.no)}</td><td>${l.type}</td><td>${esc(l.customer)}</td><td>${esc(l.item)}</td>${nd(l.qty)}${nd(f(l.price))}${nd(f(val(l)))}${nd(fi?"<b>"+f(dt[q])+"</b>":"")}${acts(L,l.id)}</tr>`}),`<tr class="t"><td colspan="7">${a.P} ${f(sp)} | ${a.M} ${f(sm)}</td><td class="n" colspan="3">الصافي ${f(sp-sm)}</td></tr>`)}</div>`}
+function stmtPage(k){const a=P[k],all=ledger(k),rows=all.filter(x=>!ui.sc||x.customer===ui.sc),last=rows.length&&ui.sc?rows[rows.length-1].bal:0,tdr=sum(rows,x=>x.dr),tcr=sum(rows,x=>x.cr);
+ return `<div class="card"><h2>تسجيل سداد / رصيد افتتاحي</h2>${S[a.list].length?form(a.Y,[["date","التاريخ","date"],["customer",a.lb,S[a.list]],["type","النوع",["سداد","رصيد افتتاحي"]],["no","رقم المستند","","o"],["desc","البيان","","o"],["amount","المبلغ","number"]],'<label style="flex-direction:row;align-items:center;gap:6px;flex:0 0 auto"><input type="checkbox" name="tr" checked style="width:auto">تسجيل في الخزينة</label>'):noList(a.lb)}</div>
+ <div class="card"><h2>كشف الحساب</h2><label style="max-width:260px;margin-bottom:10px">${a.lb}<select onchange="ui.sc=this.value;render()">${opts(S[a.list],"الكل")}</select></label>${tb(["التاريخ",a.lb,"الحركة","المستند","البيان","مدين","دائن","الرصيد",""],rows.map(x=>`<tr><td>${x.date}</td><td>${esc(x.customer)}</td><td>${x.type}</td><td>${esc(x.no)}</td><td>${esc(x.desc)}</td>${nd(x.dr?f(x.dr):"")}${nd(x.cr?f(x.cr):"")}${nd("<b>"+f(x.bal)+"</b>",cl(x.bal))}${x.id?acts(a.Y,x.id):"<td></td>"}</tr>`),`<tr class="t"><td colspan="5">${ui.sc?"الرصيد: "+f(last):"الإجمالي"}</td>${nd(f(tdr))}${nd(f(tcr))}${nd(f(tdr-tcr))}<td></td></tr>`)}<p class="mu">الفواتير والمشتريات تُعدَّل من تبويبها.</p></div>`}
+function partyPage(k){const a=P[k],b=balances(k),t=x=>f(sum(b,r=>r[x]));
+ return `<div class="card"><h2>إضافة ${a.lb}</h2><form onsubmit="addP(event,'${k}')"><label>الاسم<input name="n" required></label><button class="b">إضافة</button></form></div>
+ <div class="card">${tb([a.lb,"رصيد افتتاحي",k==="c"?"الفواتير":"المشتريات","المرتجعات","السدادات","الرصيد",""],b.map((x,i)=>`<tr><td>${esc(x.n)}</td>${nd(f(x.o))}${nd(f(x.i))}${nd(f(x.r))}${nd(f(x.p))}${nd("<b>"+f(x.b)+"</b>",cl(x.b))}<td><button class="ed" onclick="renP('${k}',${i})">✎</button><button class="x" onclick="delP('${k}',${i})">✕</button></td></tr>`),`<tr class="t"><td>الإجمالي</td>${nd(t("o"))}${nd(t("i"))}${nd(t("r"))}${nd(t("p"))}${nd(t("b"))}<td></td></tr>`)}</div>`}
+function addP(e,k){e.preventDefault();const n=new FormData(e.target).get("n").trim(),l=S[P[k].list];if(!n)return;if(l.includes(n)){al("الاسم موجود");return}l.push(n);save();render()}
+function renP(k,i){const a=P[k],l=S[a.list],o=l[i],n=(prompt(T("الاسم الجديد"),o)||"").trim();if(!n||n===o)return;if(l.includes(n)){al("الاسم موجود");return}
+ l[i]=n;[...S[a.L],...S[a.Y]].forEach(x=>{if(x.customer===o)x.customer=n});S.tre.forEach(x=>{if(x.party===o)x.party=n});save();render()}
+function delP(k,i){const a=P[k],n=S[a.list][i];if([...S[a.L],...S[a.Y]].some(x=>x.customer===n)){al("لا يمكن حذف طرف له حركات. احذف حركاته أولًا.");return}if(cf("حذف؟")){S[a.list].splice(i,1);save();render()}}
+function expList(){const dd=+S.warnDays||30;return stock().filter(x=>x.exp&&x.on>0).map(x=>({...x,d:Math.ceil((new Date(x.exp)-new Date(today))/864e5)})).filter(x=>x.d<=dd).sort((a,b)=>a.d-b.d)}
+function expWarn(){const r=expList();
+ return r.length?`<div class="card warn"><h2>⚠️ تنبيه: أصناف منتهية أو قاربت على الانتهاء (${r.length})</h2>${r.map(x=>`<div><b>${esc(x.name)}</b> — الكمية ${x.on} ${esc(x.unit)} — ${x.d<0?`<span class="neg">${T("منتهي منذ {n} يوم",{n:-x.d})}</span>`:x.d===0?`<span class="neg">${T("ينتهي اليوم")}</span>`:T("ينتهي خلال {n} يوم",{n:"<b>"+x.d+"</b>"})} (${x.exp})</div>`).join("")}</div>`:""}
+function itm(){return `<div class="card"><h2>الأصناف</h2>${form("items",[["name","اسم الصنف"],["unit","الوحدة","","o"],["price","سعر البيع","number"],["cost0","تكلفة الشراء","number","o"],["qty0","رصيد أول المدة","number","o"],["prod","تاريخ الإنتاج","date","o"],["exp","تاريخ الانتهاء","date","o"]])}<p class="mu">عند عمل فاتورة اختر الصنف من القائمة ويُملأ السعر تلقائيًا (ويمكن تعديله). في المشتريات يُملأ سعر التكلفة.</p></div>
+ <div class="card">${tb(["الصنف","الوحدة","سعر البيع","التكلفة","الإنتاج","الانتهاء","المتبقي",""],S.items.map(x=>{const d=x.exp?Math.ceil((new Date(x.exp)-new Date(today))/864e5):null;return `<tr><td>${esc(x.name)}</td><td>${esc(x.unit)}</td>${nd(f(x.price))}${nd(f(x.cost0))}<td>${x.prod||""}</td><td>${x.exp||""}</td><td class="${d!==null&&d<=(+S.warnDays||30)?"neg":""}">${d===null?"":d<0?"منتهي":T("{n} يوم",{n:d})}</td>${acts("items",x.id)}</tr>`}))}</div>`}
+function stk(){const r=stock();return expWarn()+`<div class="card"><label style="max-width:260px">تنبيه الانتهاء قبل (يوم)<input type="number" value="${+S.warnDays||30}" onchange="S.warnDays=+this.value||30;save();render()"></label><p class="mu">الأصناف تُدار من تبويب «الأصناف». الرصيد يتحدث تلقائيًا: + المشتريات − المبيعات، والمرتجعات تعكسها.</p></div>
+ <div class="card">${tb(["الصنف","الوحدة","أول المدة","مشتريات","مبيعات","الرصيد الحالي","متوسط التكلفة","القيمة","الانتهاء"],r.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.unit)}</td>${nd(x.o)}${nd(x.buy)}${nd(x.sold)}${nd("<b>"+x.on+"</b>",cl(x.on))}${nd(f(x.avg))}${nd(f(x.v))}<td>${x.exp||""}</td></tr>`),`<tr class="t"><td colspan="7">إجمالي قيمة المخزون</td>${nd(f(invVal()))}<td></td></tr>`)}</div>`}
+function tre(){const rows=treRows(),ti=sum(S.tre,r=>r.in),to=sum(S.tre,r=>r.out),cats=["تحصيل من عميل","سداد لمورد","مشتريات","مرتبات","إيجار","مصروفات تشغيل","أخرى"];
+ return `<div class="card"><h2>الخزينة</h2><div class="grid"><label>رصيد أول المدة<input type="number" step="any" value="${+S.open||0}" onchange="S.open=+this.value;save();render()"></label><div class="kpi"><small>الوارد</small><b class="n">${f(ti)}</b></div><div class="kpi"><small>المنصرف</small><b class="n">${f(to)}</b></div><div class="kpi"><small>رصيد الخزينة</small><b class="n ${cl(cash())}">${f(cash())}</b></div></div></div>
+ <div class="card"><h2>حركة جديدة</h2>${form("tre",[["date","التاريخ","date"],["no","رقم الإيصال","","o"],["desc","البيان"],["party","الجهة","","o"],["cat","التصنيف",cats],["in","وارد","number","o"],["out","منصرف","number","o"]])}</div>
+ <div class="card">${tb(["التاريخ","الإيصال","البيان","الجهة","التصنيف","وارد","منصرف","الرصيد",""],rows.map(r=>`<tr><td>${r.date}</td><td>${esc(r.no)}</td><td>${esc(r.desc)}</td><td>${esc(r.party)}</td><td>${esc(r.cat)}</td>${nd(r.in?f(r.in):"")}${nd(r.out?f(r.out):"")}${nd("<b>"+f(r.bal)+"</b>",cl(r.bal))}${acts("tre",r.id)}</tr>`),`<tr class="t"><td colspan="5">الإجمالي</td>${nd(f(ti))}${nd(f(to))}${nd(f(cash()))}<td></td></tr>`)}</div>`}
+function bud(){const df=totA()-totL(),sec=s=>`<tr><th colspan="2" style="text-align:start">${s[0]}</th></tr>${s[1].map(x=>`<tr><td style="text-align:start">${x[1]}</td><td>${AUTO[x[0]]?`<span class="n" style="color:var(--ok)">${f(bv(x[0]))}</span> <span class="mu">(تلقائي)</span>`:`<input type="number" step="any" value="${S.bud[x[0]]??""}" onchange="S.bud['${x[0]}']=this.value;save();render()">`}</td></tr>`).join("")}<tr class="t"><td style="text-align:start">إجمالي ${s[0]}</td>${nd(f(secT(s)))}</tr>`;
+ return `<div class="card"><h2>الميزانية العمومية التفصيلية</h2><div class="tw"><table style="min-width:420px">${sec(BUD[0])}${sec(BUD[1])}<tr class="t"><td style="text-align:start">إجمالي الأصول</td>${nd(f(totA()))}</tr>${sec(BUD[2])}${sec(BUD[3])}${sec(BUD[4])}<tr class="t"><td style="text-align:start">إجمالي الالتزامات وحقوق الملكية</td>${nd(f(totL()))}</tr><tr class="t"><td style="text-align:start">الفرق</td>${nd(f(df)+(Math.abs(df)<.005?" ✓ متوازنة":" غير متوازنة"),Math.abs(df)<.005?"pos":"neg")}</tr></table></div></div>`}
+const JOBS=["مدير","محاسب","مبيعات","مشتريات","أمين مخزن","أمين خزينة","أخرى"];
+const nm=id=>id==="local"?T("أنا"):ui.names[id]||(S.users[id]&&S.users[id].name)||"مستخدم";
+function myRecs(){const all=["inv","pur","tre","pay","spay","items"].flatMap(x=>S[x]).filter(r=>r.by===ui.me);return [all.filter(r=>r.at===today).length,all.filter(r=>(r.at||"").slice(0,7)===today.slice(0,7)).length,all.length]}
+function jobKpis(j){const d=docs("c"),ds=docs("s"),df=totA()-totL(),si=sum(d.filter(x=>x.type==="فاتورة"),x=>x.total),sr=sum(d.filter(x=>x.type==="مرتجع"),x=>x.total),sp=sum(ds.filter(x=>x.type==="شراء"),x=>x.total),c=x=>x.length+"",
+ m={"مبيعات":[["عدد الفواتير",c(d.filter(x=>x.type==="فاتورة"))],["صافي المبيعات",f(si-sr)],["المرتجعات",f(sr)],["مستحقات العملاء",f(recv())],["عدد العملاء",S.cus.length+""]],
+ "مشتريات":[["عدد فواتير الشراء",c(ds.filter(x=>x.type==="شراء"))],["إجمالي المشتريات",f(sp)],["مستحقات الموردين",f(pay())],["عدد الموردين",S.sup.length+""]],
+ "أمين مخزن":[["عدد الأصناف",S.items.length+""],["قيمة المخزون",f(invVal())],["أصناف قاربت الانتهاء",expList().length+"","neg"],["أصناف نفد رصيدها",stock().filter(x=>x.on<=0).length+""]],
+ "أمين خزينة":[["رصيد الخزينة",f(cash()),cl(cash())],["إجمالي الوارد",f(sum(S.tre,r=>r.in))],["إجمالي المنصرف",f(sum(S.tre,r=>r.out))],["عدد الحركات",S.tre.length+""]]};
+ return m[j]||[["رصيد الخزينة",f(cash()),cl(cash())],["صافي المبيعات",f(si-sr)],["مستحقات العملاء",f(recv())],["مستحقات الموردين",f(pay())],["قيمة المخزون",f(invVal())],["فرق الميزانية",f(df),Math.abs(df)<.005?"pos":"neg"]]}
+function home(){const id=ui.me,u=S.users[id]||{job:"",tasks:""},ts=(u.tasks||"").split("\n").map(x=>x.trim()).filter(Boolean),dn=(S.done[id+"|"+today]||[]).filter(i=>i<ts.length),[a,b,c]=myRecs(),pc=ts.length?Math.round(dn.length*100/ts.length):0;
+ return expWarn()+`<div class="card"><h2>أهلًا بك يا ${esc(nm(id))} 👋</h2><p>${u.job?`وظيفتك: <b>${esc(u.job)}</b>`:'<span class="mu">لم تُحدَّد وظيفتك بعد. يحددها المسؤول من تبويب «المستخدمون».</span>'}</p><p class="mu">تاريخ اليوم: ${today}</p></div>
+ <div class="card"><h2>مهامك اليومية</h2>${ts.length?ts.map((t,i)=>`<label style="flex-direction:row;align-items:center;gap:8px;color:var(--tx);font-size:15px;margin:6px 0"><input type="checkbox" style="width:auto" ${dn.includes(i)?"checked":""} ${canW?"":"disabled"} onchange="tick(${i})">${esc(t)}</label>`).join("")+`<div class="bar"><i style="width:${pc}%"></i></div><p class="mu">${T("أنجزت {a} من {b}",{a:dn.length,b:ts.length})} (${pc}%)</p>`:'<p class="mu">لا توجد مهام مسجّلة لك بعد.</p>'}</div>
+ <div class="card"><h2>إنجازات العمل${u.job?" — "+esc(u.job):""}</h2><div class="grid">${jobKpis(u.job).map(([t,v,k])=>`<div class="kpi"><small>${t}</small><b class="n ${k||""}">${v}</b></div>`).join("")}</div></div>
+ <div class="card"><h2>سجلّك أنت</h2><div class="grid"><div class="kpi"><small>سجلات أدخلتها اليوم</small><b>${a}</b></div><div class="kpi"><small>هذا الشهر</small><b>${b}</b></div><div class="kpi"><small>الإجمالي</small><b>${c}</b></div></div></div>`}
+function tick(i){const k=ui.me+"|"+today;Object.keys(S.done).forEach(x=>{if(!x.endsWith("|"+today))delete S.done[x]});const a=S.done[k]||[];S.done[k]=a.includes(i)?a.filter(x=>x!==i):[...a,i];save();render()}
+async function srch(){const q=$("sq").value.trim();ui.sq=q;ui.sr=[];if(q){try{const u=await claude.use("user");ui.sr=u?await u.search(q):[]}catch(e){}}render()}
+function addU(i){const q=ui.sr[i];if(S.users[q.id]){al("المستخدم موجود");return}S.users[q.id]={job:"",tasks:""};ui.names[q.id]=q.name;ui.sr=[];ui.sq="";save();render()}
+function addM(e){e.preventDefault();const d=Object.fromEntries(new FormData(e.target));S.users["m"+uid()]={name:d.name.trim(),job:d.job,tasks:""};save();render()}
+function delU(i){const id=Object.keys(S.users)[i];if(id===ui.me){al("لا يمكنك حذف نفسك");return}if(cf("حذف المستخدم من القائمة؟")){delete S.users[id];save();render()}}
+function setU(i,k,v){const id=Object.keys(S.users)[i];S.users[id][k]=v;save();render()}
+function usr(){const ids=Object.keys(S.users),ro=ui.admin?"":"disabled";
+ return `<div class="card"><h2>المستخدمون</h2><p>صلاحيتك الحالية: <b>${ui.who}</b></p><p class="mu">كل من تشاركه هذه الصفحة يظهر هنا تلقائيًا أول ما يفتح البرنامج. المسؤول يحدد وظيفة كل مستخدم ومهامه (كل مهمة في سطر)، فتظهر في شاشته الرئيسية مع لوحة إنجازات مناسبة لوظيفته.<br>لإضافة مستخدم: اضغط زر المشاركة (Share) للصفحة في Claude وأضف الشخص. صلاحية «Contributor» تسمح له بتسجيل وتعديل البيانات، و«Viewer» للمشاهدة فقط.<br>تنبيه: لو عدّل شخصان في نفس اللحظة تُحفظ آخر عملية.</p></div>
+ ${ui.admin&&canW?`<div class="card"><h2>إضافة مستخدم جديد</h2><p class="mu">١) من حسابات Claude: ابحث بالاسم وأضفه، ثم حدد وظيفته ومهامه. ولكي يدخل البرنامج يجب أن تشاركه الصفحة من زر المشاركة (Share) في Claude.<br>٢) موظف بدون حساب: أضفه بالاسم والوظيفة ليظهر في القائمة.</p><form onsubmit="srch();return false"><label>بحث بالاسم<input id="sq" value="${esc(ui.sq||"")}"></label><button class="b">بحث</button></form>${(ui.sr||[]).length?ui.sr.map((p,i)=>`<div style="padding:4px 0">${esc(p.name||"بدون اسم")} <button class="g2" onclick="addU(${i})">إضافة</button></div>`).join(""):ui.sq?'<p class="mu">لا نتائج.</p>':""}<form onsubmit="addM(event)" style="margin-top:10px"><label>اسم الموظف<input name="name" required></label><label>الوظيفة<select name="job">${JOBS.map(j=>`<option value="${j}">${j}</option>`).join("")}</select></label><button class="b">إضافة موظف</button></form></div>`:""}
+ <div class="card">${tb(["المستخدم","الوظيفة","المهام اليومية (كل مهمة في سطر)",""],ids.map((id,i)=>`<tr><td>${esc(nm(id))}</td><td><select ${ro} onchange="setU(${i},'job',this.value)"><option value="">— اختر —</option>${JOBS.map(j=>`<option value="${j}"${S.users[id].job===j?" selected":""}>${j}</option>`).join("")}</select></td><td><textarea rows="3" ${ro} onchange="setU(${i},'tasks',this.value)">${esc(S.users[id].tasks)}</textarea></td><td>${ui.admin?`<button class="x" onclick="delU(${i})">✕</button>`:""}</td></tr>`))}${ui.admin?"":'<p class="mu">التعديل متاح للمسؤول فقط.</p>'}</div>`}
+render();stat("جاهز");
+</script>
+</body>
+</html>
